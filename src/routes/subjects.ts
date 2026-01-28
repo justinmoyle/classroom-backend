@@ -10,26 +10,38 @@ router.get('/', async (req, res) => {
   try {
     const { search, department, page = 1, limit = 10 } = req.query;
 
-    const currentPage = Math.max(1, +page);
-    const limitPerPage = Math.max(1, +limit);
+    const normalizeParam = (v: unknown): string | undefined =>
+      Array.isArray(v) ? v[0] : typeof v === 'string' ? v : undefined;
+
+    const searchTerm = normalizeParam(search);
+    const departmentTerm = normalizeParam(department);
+    const pageParam = normalizeParam(page) ?? '1';
+    const limitParam = normalizeParam(limit) ?? '10';
+    const MAX_LIMIT = 100;
+    const currentPage = Math.max(1, Number.parseInt(pageParam, 10) || 1);
+    const limitPerPage = Math.min(
+      MAX_LIMIT,
+      Math.max(1, Number.parseInt(limitParam, 10) || 10)
+    );
 
     const offset = (currentPage - 1) * limitPerPage;
 
     const filterConditions = [];
 
     // If a search query exists, filter by search name or subject code
-    if (search) {
+    if (searchTerm) {
       filterConditions.push(
         or(
-          ilike(subjects.name, `%${search}%`),
-          ilike(subjects.code, `%${search}%`)
+          ilike(subjects.name, `%${searchTerm}%`),
+          ilike(subjects.code, `%${searchTerm}%`)
         )
       );
     }
 
     // If a department query exists, filter by department name
-    if (department) {
-      filterConditions.push(ilike(departments.name, `%${department}%`));
+    if (departmentTerm) {
+      const deptPattern = `%${String(departmentTerm).replace(/[%_]/g, '\\$&')}%`;
+      filterConditions.push(ilike(departments.name, deptPattern));
     }
 
     // Combine all filters using AND if any exist
