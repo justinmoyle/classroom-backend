@@ -30,5 +30,7 @@
     /* Environment types */
     "types": ["node"]
   },
-  "include": ["src", "db"]
+  "include": ["src",
+    "src/db"
+  ]
 }
