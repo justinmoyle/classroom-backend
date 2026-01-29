@@ -1,5 +1,6 @@
 import express from 'express';
 import subjectsRouter from './routes/subjects';
+import usersRouter from './routes/users';
 import cors from 'cors';
 
 const app = express();
@@ -15,12 +16,13 @@ app.use(
     origin: FRONTEND_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
 
 app.use('/api/subjects', subjectsRouter);
+app.use('/api/users', usersRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello from the classroom backend!');
