@@ -1,5 +1,5 @@
 import AgentAPI from 'apminsight';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import subjectsRouter from './routes/subjects';
 import usersRouter from './routes/users';
 import cors from 'cors';
@@ -26,7 +26,9 @@ app.use(
 
 app.use(express.json());
 
-app.use(authMiddleware);
+app.use((req: Request, res: Response, next: NextFunction) => {
+  authMiddleware(req, res, next);
+});
 app.use(securityMiddleware);
 
 app.use('/api/subjects', subjectsRouter);
