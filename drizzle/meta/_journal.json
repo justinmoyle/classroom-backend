@@ -22,6 +22,13 @@
       "when": 1769713529513,
       "tag": "0002_mushy_marten_broadcloak",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769726674244,
+      "tag": "0003_add_department_id_to_user",
+      "breakpoints": true
     }
   ]
 }
