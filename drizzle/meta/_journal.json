@@ -8,6 +8,20 @@
       "when": 1769557824381,
       "tag": "0000_jittery_robbie_robertson",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769699818196,
+      "tag": "0001_neat_starbolt",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769713529513,
+      "tag": "0002_mushy_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }
