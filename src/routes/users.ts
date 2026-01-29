@@ -1,13 +1,17 @@
 import express from 'express';
 import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
-import { departments, users } from '../db/schema';
+import { departments, user } from '../db/schema';
 import { db } from '../db';
+import { adminOnly, authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 
 // Get all users with optional filtering and pagination
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, adminOnly, async (req: AuthRequest, res) => {
   try {
+    const currentUser = req.user;
+    const isAdmin = currentUser?.role === 'admin';
+
     const { role, page = 1, limit = 10 } = req.query;
 
     const normalizeParam = (v: unknown): string | undefined =>
@@ -28,7 +32,7 @@ router.get('/', async (req, res) => {
     const filterConditions = [];
 
     if (roleTerm) {
-      filterConditions.push(eq(users.role, roleTerm));
+      filterConditions.push(eq(user.role, roleTerm as any));
     }
 
     const whereClause =
@@ -36,22 +40,29 @@ router.get('/', async (req, res) => {
 
     const countResult = await db
       .select({
-        count: sql<number>`count(*)`,
+        count: sql<string>`count(*)`,
       })
-      .from(users)
+      .from(user)
       .where(whereClause);
 
-    const totalCount = countResult[0]?.count ?? 0;
+    const totalCount = Number(countResult[0]?.count ?? 0);
 
     const usersList = await db
       .select({
-        ...getTableColumns(users),
+        id: user.id,
+        name: user.name,
+        image: user.image,
+        role: user.role,
+        departmentId: user.departmentId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        ...(isAdmin ? { email: user.email } : {}),
         department: { ...getTableColumns(departments) },
       })
-      .from(users)
-      .leftJoin(departments, eq(users.departmentId, departments.id))
+      .from(user)
+      .leftJoin(departments, eq(user.departmentId, departments.id))
       .where(whereClause)
-      .orderBy(desc(users.createdAt))
+      .orderBy(desc(user.createdAt))
       .limit(limitPerPage)
       .offset(offset);
 

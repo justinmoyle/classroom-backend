@@ -55,6 +55,10 @@ CREATE TABLE "session" (
 	CONSTRAINT "session_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
+-- Relationship: The "user" table (authentication) and application "users" table (profile) are synchronized.
+-- Source of Truth: The "user" table is the primary source of truth for overlapping fields (name, email, role, image).
+-- Sync Strategy: One-way synchronization from "user" -> "users" occurs via database triggers or application-level hooks on update.
+-- Related Entities: Managed alongside session, account, and verification for a unified identity lifecycle.
 CREATE TABLE "user" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,

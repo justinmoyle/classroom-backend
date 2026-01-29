@@ -1,5 +1,6 @@
-import { boolean, index, pgEnum, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, pgEnum, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { departments } from './app';
 
 export const roleEnum = pgEnum('role', ['student', 'teacher', 'admin']);
 
@@ -18,6 +19,9 @@ export const user = pgTable('user', {
   emailVerified: boolean('email_verified').notNull(),
   image: text('image'),
   role: roleEnum('role').default('student').notNull(),
+  departmentId: integer('department_id').references(() => departments.id, {
+    onDelete: 'set null',
+  }),
   imageCldPubId: text('image_cld_pub_id'),
   ...timestamps,
 });
@@ -49,6 +53,7 @@ export const account = pgTable('account', {
   accessTokenExpiresAt: timestamp('access_token_expires_at'),
   refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
   scope: text('scope'),
+  // store only hashed passwords (bcrypt/argon2)
   password: text('password'),
   ...timestamps,
 }, (table) => [
@@ -66,9 +71,13 @@ export const verification = pgTable('verification', {
   index('verification_identifier_idx').on(table.identifier),
 ]);
 
-export const authUserRelations = relations(user, ({ many }) => ({
+export const authUserRelations = relations(user, ({ one, many }) => ({
   sessions: many(session),
   accounts: many(account),
+  department: one(departments, {
+    fields: [user.departmentId],
+    references: [departments.id],
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

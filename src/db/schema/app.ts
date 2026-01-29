@@ -1,5 +1,6 @@
 import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { user } from './auth';
 
 export const classStatusEnum = pgEnum('class_status', [
   'active',
@@ -34,19 +35,6 @@ export const subjects = pgTable('subjects', {
   ...timestamps,
 });
 
-export const users = pgTable('users', {
-  id: varchar('id', { length: 255 }).primaryKey(), // Clerk user ID is a string
-  name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  role: varchar('role', { length: 50 }).notNull(), // 'admin', 'teacher', 'student'
-  departmentId: integer('department_id').references(() => departments.id, {
-    onDelete: 'set null',
-  }),
-  image: varchar('image', { length: 255 }),
-  imageCldPubId: varchar('image_cld_pub_id', { length: 255 }),
-  ...timestamps,
-});
-
 export const classes = pgTable(
   'classes',
   {
@@ -54,9 +42,9 @@ export const classes = pgTable(
     subjectId: integer('subject_id')
       .notNull()
       .references(() => subjects.id, { onDelete: 'cascade' }),
-    teacherId: varchar('teacher_id', { length: 255 })
+    teacherId: text('teacher_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
+      .references(() => user.id, { onDelete: 'restrict' }),
     inviteCode: varchar('invite_code', { length: 50 }).notNull().unique(),
     name: varchar('name', { length: 255 }).notNull(),
     bannerCldPubId: text('banner_cld_pub_id'),
@@ -77,9 +65,9 @@ export const enrollments = pgTable(
   'enrollments',
   {
     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-    studentId: varchar('student_id', { length: 255 })
+    studentId: text('student_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => user.id, { onDelete: 'cascade' }),
     classId: integer('class_id')
       .notNull()
       .references(() => classes.id, { onDelete: 'cascade' }),
@@ -97,7 +85,7 @@ export const enrollments = pgTable(
 
 export const departmentRelations = relations(departments, ({ many }) => ({
   subjects: many(subjects),
-  users: many(users),
+  users: many(user),
 }));
 
 export const subjectRelations = relations(subjects, ({ one, many }) => ({
@@ -108,9 +96,9 @@ export const subjectRelations = relations(subjects, ({ one, many }) => ({
   classes: many(classes),
 }));
 
-export const userRelations = relations(users, ({ one, many }) => ({
+export const userRelations = relations(user, ({ one, many }) => ({
   department: one(departments, {
-    fields: [users.departmentId],
+    fields: [user.departmentId],
     references: [departments.id],
   }),
   classes: many(classes),
@@ -122,17 +110,17 @@ export const classRelations = relations(classes, ({ one, many }) => ({
     fields: [classes.subjectId],
     references: [subjects.id],
   }),
-  teacher: one(users, {
+  teacher: one(user, {
     fields: [classes.teacherId],
-    references: [users.id],
+    references: [user.id],
   }),
   enrollments: many(enrollments),
 }));
 
 export const enrollmentRelations = relations(enrollments, ({ one }) => ({
-  student: one(users, {
+  student: one(user, {
     fields: [enrollments.studentId],
-    references: [users.id],
+    references: [user.id],
   }),
   class: one(classes, {
     fields: [enrollments.classId],
@@ -146,8 +134,8 @@ export type NewDepartment = typeof departments.$inferInsert;
 export type Subject = typeof subjects.$inferSelect;
 export type NewSubject = typeof subjects.$inferInsert;
 
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
+export type User = typeof user.$inferSelect;
+export type NewUser = typeof user.$inferInsert;
 
 export type Class = typeof classes.$inferSelect;
 export type NewClass = typeof classes.$inferInsert;
