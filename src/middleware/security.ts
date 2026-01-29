@@ -19,11 +19,15 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
       case 'teacher':
       case 'student':
         limit = 10;
-        message = 'Admin request limit exceeded (20 per minute). Please wait.';
+        message = 'Teacher/Student request limit exceeded (10 per minute). Please wait.';
         break;
       default:
         limit = 5;
         message = 'Guest request limit exceeded (5 per minute). Please sign up for higher limits.';
+    }
+
+    if (!aj) {
+      return next();
     }
 
     const client = aj.withRule(
@@ -52,7 +56,7 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (decision.isDenied() && decision.reason.isRateLimit()) {
-      return res.status(403).json({ error: 'Too many requests.', message });
+      return res.status(429).json({ error: 'Too many requests.', message });
     }
 
     next();
