@@ -2,6 +2,8 @@ import express from 'express';
 import subjectsRouter from './routes/subjects';
 import usersRouter from './routes/users';
 import cors from 'cors';
+import { authMiddleware } from './middleware/auth';
+import securityMiddleware from './middleware/security';
 
 const app = express();
 const PORT = 8000;
@@ -20,6 +22,9 @@ app.use(
 );
 
 app.use(express.json());
+
+app.use(authMiddleware);
+app.use(securityMiddleware);
 
 app.use('/api/subjects', subjectsRouter);
 app.use('/api/users', usersRouter);
