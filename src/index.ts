@@ -3,8 +3,8 @@ import express, { NextFunction, Request, Response } from 'express';
 import subjectsRouter from './routes/subjects';
 import usersRouter from './routes/users';
 import cors from 'cors';
-import { authMiddleware } from './middleware/auth';
-import securityMiddleware from './middleware/security';
+import { authMiddleware } from './middleware/auth.js';
+import securityMiddleware from './middleware/security.js';
 
 AgentAPI.config();
 

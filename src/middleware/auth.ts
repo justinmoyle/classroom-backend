@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { db } from '../db';
+import { db } from '../db/index.js';
 import { session, user } from '../db/schema';
 import { eq } from 'drizzle-orm';
 

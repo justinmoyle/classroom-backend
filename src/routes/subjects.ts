@@ -1,7 +1,7 @@
 import express from 'express';
 import { and, desc, eq, getTableColumns, ilike, or, sql } from 'drizzle-orm';
-import { departments, subjects } from '../db/schema';
-import { db } from '../db';
+import { departments, subjects } from '../db/schema/index.js';
+import { db } from '../db/index.js';
 
 const router = express.Router();
 
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
     const currentPage = Math.max(1, Number.parseInt(pageParam, 10) || 1);
     const limitPerPage = Math.min(
       MAX_LIMIT,
-      Math.max(1, Number.parseInt(limitParam, 10) || 10)
+      Math.max(1, Number.parseInt(limitParam, 10) || 10),
     );
 
     const offset = (currentPage - 1) * limitPerPage;
@@ -33,8 +33,8 @@ router.get('/', async (req, res) => {
       filterConditions.push(
         or(
           ilike(subjects.name, `%${searchTerm}%`),
-          ilike(subjects.code, `%${searchTerm}%`)
-        )
+          ilike(subjects.code, `%${searchTerm}%`),
+        ),
       );
     }
 
