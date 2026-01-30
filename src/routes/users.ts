@@ -1,22 +1,19 @@
-import express, { Request, Response } from 'express';
-import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
+import express from 'express';
+import { and, desc, eq, getTableColumns, ilike, or, sql } from 'drizzle-orm';
 import { departments, user } from '../db/schema/index.js';
 import { db } from '../db/index.js';
-import { adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all users with optional filtering and pagination
-router.get('/', adminOnly, async (req: Request, res: Response) => {
+// Get all users with optional search, filtering and pagination
+router.get('/', async (req, res) => {
   try {
-    const currentUser = req.user;
-    const isAdmin = currentUser?.role === 'admin';
-
-    const { role, page = 1, limit = 10 } = req.query;
+    const { search, role, page = 1, limit = 10 } = req.query;
 
     const normalizeParam = (v: unknown): string | undefined =>
       Array.isArray(v) ? v[0] : typeof v === 'string' ? v : undefined;
 
+    const searchTerm = normalizeParam(search);
     const roleTerm = normalizeParam(role);
     const pageParam = normalizeParam(page) ?? '1';
     const limitParam = normalizeParam(limit) ?? '10';
@@ -31,32 +28,37 @@ router.get('/', adminOnly, async (req: Request, res: Response) => {
 
     const filterConditions = [];
 
+    // If a search query exists, filter by name or email
+    if (searchTerm) {
+      filterConditions.push(
+        or(
+          ilike(user.name, `%${searchTerm}%`),
+          ilike(user.email, `%${searchTerm}%`),
+        ),
+      );
+    }
+
+    // If a role query exists, filter by role (exact match)
     if (roleTerm) {
       filterConditions.push(eq(user.role, roleTerm as any));
     }
 
+    // Combine all filters using AND if any exist
     const whereClause =
       filterConditions.length > 0 ? and(...filterConditions) : undefined;
 
     const countResult = await db
       .select({
-        count: sql<string>`count(*)`,
+        count: sql<number>`count(*)`,
       })
       .from(user)
       .where(whereClause);
 
-    const totalCount = Number(countResult[0]?.count ?? 0);
+    const totalCount = countResult[0]?.count ?? 0;
 
     const usersList = await db
       .select({
-        id: user.id,
-        name: user.name,
-        image: user.image,
-        role: user.role,
-        departmentId: user.departmentId,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        ...(isAdmin ? { email: user.email } : {}),
+        ...getTableColumns(user),
         department: { ...getTableColumns(departments) },
       })
       .from(user)

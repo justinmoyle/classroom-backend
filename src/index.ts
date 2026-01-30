@@ -2,6 +2,7 @@ import AgentAPI from 'apminsight';
 import express, { NextFunction, Request, Response } from 'express';
 import subjectsRouter from './routes/subjects.js';
 import usersRouter from './routes/users.js';
+import classesRouter from './routes/classes.js';
 import cors from 'cors';
 import { authMiddleware } from './middleware/auth.js';
 import securityMiddleware from './middleware/security.js';
@@ -33,6 +34,7 @@ app.use(securityMiddleware);
 
 app.use('/api/subjects', subjectsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/classes', classesRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello from the classroom backend!');
