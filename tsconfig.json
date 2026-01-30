@@ -28,7 +28,6 @@
     ]
   },
   "include": [
-    "src",
-    "drizzle.config.ts"
+    "src"
   ]
 }
