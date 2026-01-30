@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { db } from '../db/index.js';
-import { session, user } from '../db/schema';
+import { session, user } from '../db/schema/index.js';
 import { eq } from 'drizzle-orm';
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {

@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express';
 import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
-import { departments, user } from '../db/schema';
-import { db } from '../db';
-import { adminOnly } from '../middleware/auth';
+import { departments, user } from '../db/schema/index.js';
+import { db } from '../db/index.js';
+import { adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 

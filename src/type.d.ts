@@ -1,11 +1,11 @@
-import {user} from './db/schema';
+import { user } from './db/schema/index.js';
 
 declare global {
-    namespace Express {
-        interface Request {
-            user?: typeof user.$inferSelect;
-        }
+  namespace Express {
+    interface Request {
+      user?: typeof user.$inferSelect;
     }
+  }
 }
 
 export type UserRoles = 'admin' | 'teacher' | 'student';

@@ -1,7 +1,7 @@
 import AgentAPI from 'apminsight';
 import express, { NextFunction, Request, Response } from 'express';
-import subjectsRouter from './routes/subjects';
-import usersRouter from './routes/users';
+import subjectsRouter from './routes/subjects.js';
+import usersRouter from './routes/users.js';
 import cors from 'cors';
 import { authMiddleware } from './middleware/auth.js';
 import securityMiddleware from './middleware/security.js';
