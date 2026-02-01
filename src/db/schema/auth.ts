@@ -16,8 +16,6 @@ export const user = pgTable('users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').notNull(),
-  image: text('image'),
   role: roleEnum('role').default('student').notNull(),
   departmentId: integer('department_id').references(() => departments.id, {
     onDelete: 'set null',
