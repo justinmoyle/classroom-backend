@@ -43,13 +43,13 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
       headers: req.headers,
       method: req.method,
       url: req.originalUrl ?? req.url,
-      socket: { remoteAddress: req.socket.remoteAddress ?? req.ip ?? '0.0.0.0' },
+      socket: { remoteAddress: req.socket?.remoteAddress ?? req.ip ?? '0.0.0.0' },
     };
 
     const decision = await client.protect(arcjetRequest);
 
     if (decision.isDenied() && decision.reason.isBot()) {
-      console.warn(`Bot detected and blocked: ${arcjetRequest.url} from ${arcjetRequest.socket.remoteAddress}`);
+      console.warn(`Bot detected and blocked: ${arcjetRequest.url} from ${arcjetRequest.socket?.remoteAddress}`);
       return res.status(403).json({ error: 'Forbidden', message: 'Automated requests are not allowed.' });
     }
 
@@ -58,7 +58,7 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (decision.isDenied() && decision.reason.isRateLimit()) {
-      console.warn(`Rate limit exceeded for role ${role}: ${arcjetRequest.url} from ${arcjetRequest.socket.remoteAddress}`);
+      console.warn(`Rate limit exceeded for role ${role}: ${arcjetRequest.url} from ${arcjetRequest.socket?.remoteAddress}`);
       return res.status(429).json({ error: 'Too many requests.', message });
     }
 

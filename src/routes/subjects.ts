@@ -177,23 +177,10 @@ router.get('/:id/users', async (req, res) => {
     let role: string | undefined;
     if (Array.isArray(filters)) {
       const roleFilter = filters.find((f: any) => f.field === 'role' && f.operator === 'eq');
-      if (roleFilter) role = roleFilter.value;
+      if (roleFilter && typeof roleFilter === 'object' && 'value' in roleFilter) {
+        role = roleFilter.value as string;
+      }
     }
-
-    const whereConditions = [eq(classes.subjectId, id)];
-    if (role) {
-      whereConditions.push(eq(user.role, role));
-    }
-
-    const countResult = await db
-      .select({ count: sql<number>`count(distinct ${user.id})` })
-      .from(user)
-      .innerJoin(
-        role === 'student' ? enrollments : classes,
-        role === 'student' ? eq(user.id, enrollments.studentId) : eq(user.id, classes.teacherId)
-      )
-      .innerJoin(classes, role === 'student' ? eq(enrollments.classId, classes.id) : eq(classes.id, classes.id))
-      .where(and(eq(classes.subjectId, id), role ? eq(user.role, role) : undefined));
 
     // Simplify the query logic for subject users (teachers and students)
     // For students: users enrolled in any class of this subject
@@ -222,7 +209,7 @@ router.get('/:id/users', async (req, res) => {
         .offset(offset);
     } else {
       // teacher or all
-      const roleCondition = role ? eq(user.role, role) : undefined;
+      const roleCondition = role ? eq(user.role, role as any) : undefined;
 
       countQuery = db
         .select({ count: sql<number>`count(distinct ${user.id})` })

@@ -208,7 +208,9 @@ router.get('/:id/users', async (req, res) => {
     let role: string | undefined;
     if (Array.isArray(filters)) {
       const roleFilter = filters.find((f: any) => f.field === 'role' && f.operator === 'eq');
-      if (roleFilter) role = roleFilter.value;
+      if (roleFilter && typeof roleFilter === 'object' && 'value' in roleFilter) {
+        role = roleFilter.value as string;
+      }
     }
 
     let countQuery;
@@ -253,12 +255,12 @@ router.get('/:id/users', async (req, res) => {
       countQuery = db
         .select({ count: sql<number>`count(*)` })
         .from(user)
-        .where(eq(user.department, id.toString())); // Assuming department ID is stored as string in user table based on some projects
+        .where(eq(user.departmentId, id));
 
       usersQuery = db
         .select()
         .from(user)
-        .where(eq(user.department, id.toString()))
+        .where(eq(user.departmentId, id))
         .limit(limitPerPage)
         .offset(offset);
     }

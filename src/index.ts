@@ -8,6 +8,8 @@ import enrollmentsRouter from './routes/enrollments.js';
 import cors from 'cors';
 import { authMiddleware } from './middleware/auth.js';
 import securityMiddleware from './middleware/security.js';
+import { toNodeHandler } from 'better-auth/node';
+import { auth } from './lib/auth.js';
 
 AgentAPI.config();
 
@@ -32,7 +34,7 @@ app.use(
         callback(new Error('Not allowed by CORS'));
       }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
   }),
 );
@@ -40,6 +42,9 @@ app.use(
 app.use(express.json());
 
 app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api/auth')) {
+    return next();
+  }
   authMiddleware(req, res, next);
 });
 app.use(securityMiddleware);
@@ -49,6 +54,10 @@ app.use('/api/users', usersRouter);
 app.use('/api/classes', classesRouter);
 app.use('/api/departments', departmentsRouter);
 app.use('/api/enrollments', enrollmentsRouter);
+
+app.use('/api/auth', (req, res) => {
+  return toNodeHandler(auth)(req, res);
+});
 
 app.get('/', (req, res) => {
   res.send('Hello from the classroom backend!');

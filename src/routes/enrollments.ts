@@ -84,10 +84,12 @@ router.post('/', async (req, res) => {
 
     if (!targetClass) return res.status(404).json({ error: 'Class not found' });
 
-    const [{ count }] = await db
+    const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(enrollments)
       .where(eq(enrollments.classId, classId));
+
+    const count = countResult[0]?.count ?? 0;
 
     if (count >= targetClass.capacity) {
       return res.status(400).json({ error: 'Class is full' });
