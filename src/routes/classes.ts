@@ -1,10 +1,22 @@
 import express from 'express';
 import { db } from '../db/index.js';
 import { and, desc, eq, getTableColumns, ilike, or, sql } from 'drizzle-orm';
-import { subjects, classes, departments } from '../db/schema/app.js';
+import { subjects, classes, departments, enrollments } from '../db/schema/app.js';
 import { user } from '../db/schema/auth.js';
 
+import { getDashboardStats } from '../services/stats.js';
+
 const router = express.Router();
+
+router.get('/stats', async (req, res) => {
+  try {
+    const stats = await getDashboardStats();
+    res.status(200).json({ data: stats });
+  } catch (e) {
+    console.error(`Get /classes/stats error: ${e}`);
+    res.status(500).json({ error: 'Failed to get stats' });
+  }
+});
 
 router.post('/', async (req, res) => {
   try {
@@ -129,6 +141,47 @@ router.get('/:id', async (req, res) => {
   if (!classDetails) return res.status(404).json({ error: 'No class found' });
 
   res.status(200).json({ data: classDetails });
+});
+
+// Update class
+router.patch('/:id', async (req, res) => {
+  try {
+    const classId = Number(req.params.id);
+    if (!Number.isFinite(classId))
+      return res.status(400).json({ error: 'Invalid ID' });
+
+    const [updatedClass] = await db
+      .update(classes)
+      .set(req.body)
+      .where(eq(classes.id, classId))
+      .returning();
+
+    if (!updatedClass) return res.status(404).json({ error: 'Class not found' });
+
+    res.status(200).json({ data: updatedClass });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update class' });
+  }
+});
+
+// Delete class
+router.delete('/:id', async (req, res) => {
+  try {
+    const classId = Number(req.params.id);
+    if (!Number.isFinite(classId))
+      return res.status(400).json({ error: 'Invalid ID' });
+
+    const [deletedClass] = await db
+      .delete(classes)
+      .where(eq(classes.id, classId))
+      .returning();
+
+    if (!deletedClass) return res.status(404).json({ error: 'Class not found' });
+
+    res.status(200).json({ data: deletedClass });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to delete class' });
+  }
 });
 
 export default router;

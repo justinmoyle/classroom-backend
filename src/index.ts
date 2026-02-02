@@ -3,6 +3,8 @@ import express, { NextFunction, Request, Response } from 'express';
 import subjectsRouter from './routes/subjects.js';
 import usersRouter from './routes/users.js';
 import classesRouter from './routes/classes.js';
+import departmentsRouter from './routes/departments.js';
+import enrollmentsRouter from './routes/enrollments.js';
 import cors from 'cors';
 import { authMiddleware } from './middleware/auth.js';
 import securityMiddleware from './middleware/security.js';
@@ -45,6 +47,8 @@ app.use(securityMiddleware);
 app.use('/api/subjects', subjectsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/classes', classesRouter);
+app.use('/api/departments', departmentsRouter);
+app.use('/api/enrollments', enrollmentsRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello from the classroom backend!');

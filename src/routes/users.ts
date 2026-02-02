@@ -83,4 +83,83 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Create user
+router.post('/', async (req, res) => {
+  try {
+    const { email, name, role, departmentId, image } = req.body;
+    const [newUser] = await db
+      .insert(user)
+      .values({
+        id: crypto.randomUUID(),
+        email,
+        name,
+        role,
+        departmentId,
+        imageCldPubId: image, // Assuming image is public ID for now or adjust as needed
+      })
+      .returning();
+
+    res.status(201).json({ data: newUser });
+  } catch (e) {
+    if ((e as any).code === '23505') {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Get one user
+router.get('/:id', async (req, res) => {
+  try {
+    const [foundUser] = await db
+      .select({
+        ...getTableColumns(user),
+        department: { ...getTableColumns(departments) },
+      })
+      .from(user)
+      .leftJoin(departments, eq(user.departmentId, departments.id))
+      .where(eq(user.id, req.params.id))
+      .limit(1);
+
+    if (!foundUser) return res.status(404).json({ error: 'User not found' });
+
+    res.status(200).json({ data: foundUser });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// Update user
+router.patch('/:id', async (req, res) => {
+  try {
+    const [updatedUser] = await db
+      .update(user)
+      .set(req.body)
+      .where(eq(user.id, req.params.id))
+      .returning();
+
+    if (!updatedUser) return res.status(404).json({ error: 'User not found' });
+
+    res.status(200).json({ data: updatedUser });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Delete user
+router.delete('/:id', async (req, res) => {
+  try {
+    const [deletedUser] = await db
+      .delete(user)
+      .where(eq(user.id, req.params.id))
+      .returning();
+
+    if (!deletedUser) return res.status(404).json({ error: 'User not found' });
+
+    res.status(200).json({ data: deletedUser });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
 export default router;

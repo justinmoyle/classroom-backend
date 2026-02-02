@@ -23,8 +23,8 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
         message = 'Teacher/Student request limit exceeded (60 per minute). Please wait.';
         break;
       default:
-        limit = 30;
-        message = 'Guest request limit exceeded (30 per minute). Please sign up for higher limits.';
+        limit = 100;
+        message = 'Guest request limit exceeded (100 per minute). Please sign up for higher limits.';
     }
 
     if (!aj) {
@@ -49,6 +49,7 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
     const decision = await client.protect(arcjetRequest);
 
     if (decision.isDenied() && decision.reason.isBot()) {
+      console.warn(`Bot detected and blocked: ${arcjetRequest.url} from ${arcjetRequest.socket.remoteAddress}`);
       return res.status(403).json({ error: 'Forbidden', message: 'Automated requests are not allowed.' });
     }
 
@@ -57,6 +58,7 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (decision.isDenied() && decision.reason.isRateLimit()) {
+      console.warn(`Rate limit exceeded for role ${role}: ${arcjetRequest.url} from ${arcjetRequest.socket.remoteAddress}`);
       return res.status(429).json({ error: 'Too many requests.', message });
     }
 

@@ -8,7 +8,7 @@ if (process.env.ARCJET_KEY) {
     rules: [
       shield({ mode: 'LIVE' }),
       detectBot({
-        mode: 'LIVE',
+        mode: 'DRY_RUN',
         allow: [
           'CATEGORY:SEARCH_ENGINE',
           'CATEGORY:PREVIEW',
@@ -17,7 +17,7 @@ if (process.env.ARCJET_KEY) {
       slidingWindow({
         mode: 'LIVE',
         interval: '1m',
-        max: 60,
+        max: 100,
       }),
     ],
     proxies: ['127.0.0.1'],
