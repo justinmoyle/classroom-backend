@@ -286,6 +286,7 @@ router.get('/:id/users', async (req, res) => {
 // Create department
 router.post('/', async (req, res) => {
   try {
+    console.log('Creating department with payload:', req.body);
     const [newDepartment] = await db
       .insert(departments)
       .values(req.body)
@@ -293,7 +294,19 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ data: newDepartment });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to create department' });
+    console.error('Detailed error creating department:', e);
+    // Log properties of the error object
+    if (e instanceof Error) {
+      console.error('Error message:', e.message);
+      console.error('Error stack:', e.stack);
+    }
+    res.status(500).json({ 
+      error: 'Failed to create department', 
+      details: (e as any).message,
+      code: (e as any).code,
+      hint: (e as any).hint,
+      internalQuery: (e as any).internalQuery
+    });
   }
 });
 

@@ -22,6 +22,20 @@
       "when": 1769713529513,
       "tag": "0002_mushy_marten_broadcloak",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770071913783,
+      "tag": "0003_even_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770071926632,
+      "tag": "0004_stale_shadowcat",
+      "breakpoints": true
     }
   ]
 }
