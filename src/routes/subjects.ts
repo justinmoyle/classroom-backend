@@ -250,6 +250,32 @@ router.get('/:id/users', async (req, res) => {
 // Create subject
 router.post('/', async (req, res) => {
   try {
+    // Basic server-side validation
+    const { departmentId, name, code } = req.body ?? {};
+
+    if (!Number.isFinite(Number(departmentId)) || Number(departmentId) < 1) {
+      return res.status(400).json({ error: 'Department is required' });
+    }
+
+    if (typeof name !== 'string' || name.trim().length < 1) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    if (typeof code !== 'string' || code.trim().length < 1) {
+      return res.status(400).json({ error: 'Code is required' });
+    }
+
+    // Ensure department exists
+    const [dept] = await db
+      .select({ id: departments.id })
+      .from(departments)
+      .where(eq(departments.id, Number(departmentId)))
+      .limit(1);
+
+    if (!dept) {
+      return res.status(400).json({ error: 'Department not found' });
+    }
+
     const [newSubject] = await db
       .insert(subjects)
       .values(req.body)
@@ -257,6 +283,24 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ data: newSubject });
   } catch (e) {
+    // Log full error for debugging
+    console.error('Post /subjects error:', e);
+
+    // Handle common Postgres error codes with friendlier messages
+    const err: any = e;
+    if (err?.code === '23505') {
+      // unique_violation
+      return res.status(400).json({ error: 'Subject code must be unique' });
+    }
+    if (err?.code === '23503') {
+      // foreign_key_violation
+      return res.status(400).json({ error: 'Invalid department or foreign key violation' });
+    }
+    if (err?.code === '22001') {
+      // string_data_right_truncation
+      return res.status(400).json({ error: 'One of the fields exceeds the allowed length' });
+    }
+
     res.status(500).json({ error: 'Failed to create subject' });
   }
 });
