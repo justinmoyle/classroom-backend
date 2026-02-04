@@ -184,4 +184,61 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Get users enrolled in a class
+router.get('/:id/users', async (req, res) => {
+  try {
+    const classId = Number(req.params.id);
+    if (!Number.isFinite(classId))
+      return res.status(400).json({ error: 'Invalid class id' });
+
+    // Verify class exists
+    const [targetClass] = await db
+      .select()
+      .from(classes)
+      .where(eq(classes.id, classId))
+      .limit(1);
+
+    if (!targetClass) return res.status(404).json({ error: 'Class not found' });
+
+    const { page = 1, limit = 100 } = req.query;
+    const normalizeParam = (v: unknown): string | undefined =>
+      Array.isArray(v) ? v[0] : typeof v === 'string' ? v : undefined;
+
+    const pageParam = normalizeParam(page) ?? '1';
+    const limitParam = normalizeParam(limit) ?? '100';
+    const currentPage = Math.max(1, Number.parseInt(pageParam, 10) || 1);
+    const limitPerPage = Math.min(1000, Math.max(1, Number.parseInt(limitParam, 10) || 100));
+    const offset = (currentPage - 1) * limitPerPage;
+
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(enrollments)
+      .where(eq(enrollments.classId, classId));
+
+    const totalCount = countResult[0]?.count ?? 0;
+
+    const usersList = await db
+      .select({ ...getTableColumns(user) })
+      .from(enrollments)
+      .leftJoin(user, eq(enrollments.studentId, user.id))
+      .where(eq(enrollments.classId, classId))
+      .orderBy(desc(enrollments.createdAt))
+      .limit(limitPerPage)
+      .offset(offset);
+
+    res.status(200).json({
+      data: usersList,
+      pagination: {
+        page: currentPage,
+        limit: limitPerPage,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limitPerPage),
+      },
+    });
+  } catch (e) {
+    console.error(`Get /classes/:id/users error: ${e}`);
+    res.status(500).json({ error: 'Failed to get class users' });
+  }
+});
+
 export default router;

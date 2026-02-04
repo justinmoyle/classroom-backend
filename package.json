@@ -10,6 +10,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
     "test:integration": "tsx scripts/integration/test_create_department.ts",
+    "test:integration:class-users": "tsx scripts/integration/test_class_users.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
