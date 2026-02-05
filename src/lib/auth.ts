@@ -48,6 +48,8 @@ export const auth = betterAuth({
                 attributes: {
                     sameSite: 'none',
                     secure: true,
+                    // Set domain to allow cookie to be sent cross-site
+                    domain: '.up.railway.app',
                 }
             }
         }
