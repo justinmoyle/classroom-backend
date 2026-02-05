@@ -42,10 +42,14 @@ export const auth = betterAuth({
         return envOrigins;
     })(),
     baseURL: process.env.BACKEND_URL || 'http://localhost:8000',
-    cookies: process.env.NODE_ENV === 'production' ? {
-        session: {
-            sameSite: 'none',
-            secure: true,
-        },
+    advanced: process.env.NODE_ENV === 'production' ? {
+        cookies: {
+            session_token: {
+                attributes: {
+                    sameSite: 'none',
+                    secure: true,
+                }
+            }
+        }
     } : {},
 });
