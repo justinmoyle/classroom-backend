@@ -50,19 +50,6 @@ import securityMiddleware from './middleware/security.js';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/auth.js';
 
-// Patch better-auth to always set SameSite=None; Secure for session cookies in production
-import { setSessionCookie } from 'better-auth/cookies';
-const origSetSessionCookie = setSessionCookie;
-if (process.env.NODE_ENV === 'production') {
-  (globalThis as any).setSessionCookie = (...args: any[]) => {
-    if (args[0] && args[0].res && args[1]) {
-      // Patch cookie options
-      args[1].sameSite = 'none';
-      args[1].secure = true;
-    }
-    return origSetSessionCookie(...args);
-  };
-}
 import { db } from './db/index.js';
 import { sql } from 'drizzle-orm';
 import { departments } from './db/schema/index.js';
