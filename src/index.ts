@@ -125,13 +125,32 @@ const createAuthHandler = (label: string) => {
 // Primary mount: /api/auth/*
 app.use('/api/auth', createAuthHandler('auth'));
 
-// Compatibility mount: /api/sign-in, /api/get-session, /api/sign-up, /api/sign-out, /api/verify, /api/refresh-token
-app.use('/api/sign-in', createAuthHandler('sign-in'));
-app.use('/api/sign-up', createAuthHandler('sign-up'));
-app.use('/api/get-session', createAuthHandler('get-session'));
-app.use('/api/sign-out', createAuthHandler('sign-out'));
-app.use('/api/verify', createAuthHandler('verify'));
-app.use('/api/refresh-token', createAuthHandler('refresh-token'));
+// Compatibility mount: rewrite /api/sign-in/* to /api/auth/sign-in/*, etc.
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+  const match = req.path.match(/^\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)(\/.*|$)/);
+  if (!match) {
+    return next();
+  }
+
+  // Rewrite the path and url to /auth/<endpoint> for better-auth
+  const endpoint = match[1];
+  const rest = match[2] || '';
+  req.url = `/auth/${endpoint}${rest}${req.url.slice(match[0].length)}`;
+
+  const handler = toNodeHandler(auth);
+  (async () => {
+    try {
+      await handler(req, res);
+    } catch (e: any) {
+      console.error('Auth route error (compat /api):', e);
+      const errMsg = String(e?.cause?.message || e?.message || '').toLowerCase();
+      if (errMsg.includes('failed to parse url') || errMsg.includes('failed to connect') || errMsg.includes('database')) {
+        return res.status(503).json({ error: 'Authentication service temporarily unavailable' });
+      }
+      next(e);
+    }
+  })();
+});
 
 // Health check to verify DB connectivity
 app.get('/api/health', async (req, res) => {
