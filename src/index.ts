@@ -11,7 +11,32 @@ const compiledSchemaPath = path.join(__dirname, 'db', 'schema', 'app.js');
 if (process.env.NODE_ENV === 'production') {
   if (!fs.existsSync(compiledSchemaPath)) {
     console.error(`Startup error: compiled schema file missing at ${compiledSchemaPath}. Did you run the TypeScript build step?`);
+    // Print listing of dist/db to help diagnose packaging issues
+    try {
+      const schemaDir = path.join(__dirname, 'db', 'schema');
+      console.error('Contents of', schemaDir, ':', fs.existsSync(schemaDir) ? fs.readdirSync(schemaDir) : '(not found)');
+    } catch (e) {
+      console.error('Failed to list dist/db/schema:', e);
+    }
     process.exit(1);
+  }
+
+  // Print a short diagnostic of compiled schema files to make deployment issues clear in logs
+  try {
+    const schemaDir = path.join(__dirname, 'db', 'schema');
+    const files = fs.existsSync(schemaDir) ? fs.readdirSync(schemaDir) : [];
+    console.log('Startup diagnostic: dist/db/schema files =>', files);
+    for (const f of files) {
+      const p = path.join(schemaDir, f);
+      try {
+        const content = fs.readFileSync(p, { encoding: 'utf8' });
+        console.log(`--- ${f} (first 300 chars) ---\n${content.slice(0, 300).replace(/\n/g, '\\n')}\n`);
+      } catch (e) {
+        console.warn('Could not read', p, e);
+      }
+    }
+  } catch (e) {
+    console.error('Schema diagnostic failed:', e);
   }
 }
 import subjectsRouter from './routes/subjects.js';

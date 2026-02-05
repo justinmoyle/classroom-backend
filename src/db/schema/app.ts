@@ -1,6 +1,6 @@
 import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { user } from './auth';
+import { user } from './auth.js';
 
 export const classStatusEnum = pgEnum('class_status', [
   'active',

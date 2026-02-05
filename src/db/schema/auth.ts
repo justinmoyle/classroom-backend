@@ -1,6 +1,6 @@
 import { boolean, index, integer, pgEnum, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { departments } from './app';
+import { departments } from './app.js';
 
 export const roleEnum = pgEnum('role', ['student', 'teacher', 'admin']);
 
