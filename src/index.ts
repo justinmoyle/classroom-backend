@@ -88,9 +88,15 @@ app.use(
 app.use(express.json());
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  if (req.path.startsWith('/api/auth')) {
+  // Allow requests for auth endpoints (mounted under /api/auth or expected at /api/*)
+  const isAuthPath =
+    req.path.startsWith('/api/auth') ||
+    Boolean(req.path.match(/^\/api\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)/));
+
+  if (isAuthPath) {
     return next();
   }
+
   authMiddleware(req, res, next);
 });
 app.use(securityMiddleware);
@@ -124,6 +130,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Wrap auth handler so DB/connectivity issues map to 503 and are logged clearly
+// Primary mount: keep existing mount at /api/auth
 app.use('/api/auth', (req, res, next) => {
   const handler = toNodeHandler(auth);
   (async () => {
@@ -131,6 +138,28 @@ app.use('/api/auth', (req, res, next) => {
       await handler(req, res);
     } catch (e: any) {
       console.error('Auth route error:', e);
+      const errMsg = String(e?.cause?.message || e?.message || '').toLowerCase();
+      if (errMsg.includes('failed to parse url') || errMsg.includes('failed to connect') || errMsg.includes('database')) {
+        return res.status(503).json({ error: 'Authentication service temporarily unavailable' });
+      }
+      next(e);
+    }
+  })();
+});
+
+// Compatibility mount: expose authentication endpoints at /api/*
+app.use('/api', (req, res, next) => {
+  // Only let the auth handler process the specific auth-related paths under /api
+  if (!req.path.match(/^\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)/)) {
+    return next();
+  }
+
+  const handler = toNodeHandler(auth);
+  (async () => {
+    try {
+      await handler(req, res);
+    } catch (e: any) {
+      console.error('Auth route error (compat /api):', e);
       const errMsg = String(e?.cause?.message || e?.message || '').toLowerCase();
       if (errMsg.includes('failed to parse url') || errMsg.includes('failed to connect') || errMsg.includes('database')) {
         return res.status(503).json({ error: 'Authentication service temporarily unavailable' });
