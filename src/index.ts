@@ -1,5 +1,19 @@
 import AgentAPI from 'apminsight';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express, { NextFunction, Request, Response } from 'express';
+
+// Sanity check for production: ensure compiled schema file exists so we fail fast with a helpful error
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const compiledSchemaPath = path.join(__dirname, 'db', 'schema', 'app.js');
+if (process.env.NODE_ENV === 'production') {
+  if (!fs.existsSync(compiledSchemaPath)) {
+    console.error(`Startup error: compiled schema file missing at ${compiledSchemaPath}. Did you run the TypeScript build step?`);
+    process.exit(1);
+  }
+}
 import subjectsRouter from './routes/subjects.js';
 import usersRouter from './routes/users.js';
 import classesRouter from './routes/classes.js';
