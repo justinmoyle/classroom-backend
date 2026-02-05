@@ -87,25 +87,51 @@ app.use(
 
 app.use(express.json());
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  // Allow requests for auth endpoints (mounted under /api/auth or expected at /api/*)
+// Auth middleware: skip for auth endpoints
+const authCheckMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const isAuthPath =
     req.path.startsWith('/api/auth') ||
-    Boolean(req.path.match(/^\/api\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)($|\/)/));
+    req.path.match(/^\/api\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)($|\/)/);
 
   if (isAuthPath) {
     return next();
   }
 
   authMiddleware(req, res, next);
-});
+};
+
+app.use(authCheckMiddleware);
 app.use(securityMiddleware);
 
-app.use('/api/subjects', subjectsRouter);
-app.use('/api/users', usersRouter);
-app.use('/api/classes', classesRouter);
-app.use('/api/departments', departmentsRouter);
-app.use('/api/enrollments', enrollmentsRouter);
+// Auth handler wrapper
+const createAuthHandler = (label: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const handler = toNodeHandler(auth);
+    (async () => {
+      try {
+        await handler(req, res);
+      } catch (e: any) {
+        console.error(`Auth route error (${label}):`, e);
+        const errMsg = String(e?.cause?.message || e?.message || '').toLowerCase();
+        if (errMsg.includes('failed to parse url') || errMsg.includes('failed to connect') || errMsg.includes('database')) {
+          return res.status(503).json({ error: 'Authentication service temporarily unavailable' });
+        }
+        next(e);
+      }
+    })();
+  };
+};
+
+// Primary mount: /api/auth/*
+app.use('/api/auth', createAuthHandler('auth'));
+
+// Compatibility mount: /api/sign-in, /api/get-session, /api/sign-up, /api/sign-out, /api/verify, /api/refresh-token
+app.use('/api/sign-in', createAuthHandler('sign-in'));
+app.use('/api/sign-up', createAuthHandler('sign-up'));
+app.use('/api/get-session', createAuthHandler('get-session'));
+app.use('/api/sign-out', createAuthHandler('sign-out'));
+app.use('/api/verify', createAuthHandler('verify'));
+app.use('/api/refresh-token', createAuthHandler('refresh-token'));
 
 // Health check to verify DB connectivity
 app.get('/api/health', async (req, res) => {
@@ -129,45 +155,12 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Wrap auth handler so DB/connectivity issues map to 503 and are logged clearly
-// Primary mount: keep existing mount at /api/auth
-app.use('/api/auth', (req, res, next) => {
-  const handler = toNodeHandler(auth);
-  (async () => {
-    try {
-      await handler(req, res);
-    } catch (e: any) {
-      console.error('Auth route error:', e);
-      const errMsg = String(e?.cause?.message || e?.message || '').toLowerCase();
-      if (errMsg.includes('failed to parse url') || errMsg.includes('failed to connect') || errMsg.includes('database')) {
-        return res.status(503).json({ error: 'Authentication service temporarily unavailable' });
-      }
-      next(e);
-    }
-  })();
-});
-
-// Compatibility mount: expose authentication endpoints at /api/*
-app.use('/api', (req, res, next) => {
-  // Only let the auth handler process the specific auth-related paths under /api
-  if (!req.path.match(/^\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)($|\/)/)) {
-    return next();
-  }
-
-  const handler = toNodeHandler(auth);
-  (async () => {
-    try {
-      await handler(req, res);
-    } catch (e: any) {
-      console.error('Auth route error (compat /api):', e);
-      const errMsg = String(e?.cause?.message || e?.message || '').toLowerCase();
-      if (errMsg.includes('failed to parse url') || errMsg.includes('failed to connect') || errMsg.includes('database')) {
-        return res.status(503).json({ error: 'Authentication service temporarily unavailable' });
-      }
-      next(e);
-    }
-  })();
-});
+// Resource routers
+app.use('/api/subjects', subjectsRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/classes', classesRouter);
+app.use('/api/departments', departmentsRouter);
+app.use('/api/enrollments', enrollmentsRouter);
 
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {
