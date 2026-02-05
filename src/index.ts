@@ -91,7 +91,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Allow requests for auth endpoints (mounted under /api/auth or expected at /api/*)
   const isAuthPath =
     req.path.startsWith('/api/auth') ||
-    Boolean(req.path.match(/^\/api\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)/));
+    Boolean(req.path.match(/^\/api\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)($|\/)/));
 
   if (isAuthPath) {
     return next();
@@ -150,7 +150,7 @@ app.use('/api/auth', (req, res, next) => {
 // Compatibility mount: expose authentication endpoints at /api/*
 app.use('/api', (req, res, next) => {
   // Only let the auth handler process the specific auth-related paths under /api
-  if (!req.path.match(/^\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)/)) {
+  if (!req.path.match(/^\/(sign-in|sign-up|get-session|sign-out|verify|refresh-token)($|\/)/)) {
     return next();
   }
 
